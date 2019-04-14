@@ -187,3 +187,6 @@ dmypy.json
 .history
 
 # End of https://www.gitignore.io/api/c++,linux,python,visualstudiocode
+
+### Visual Studio Code C/C++ extension
+!.vscode/c_cpp_properties.json
