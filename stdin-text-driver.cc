@@ -1,7 +1,6 @@
 #include "graphics.h"
 #include "led-matrix.h"
 
-#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,13 +17,8 @@ static int usage(const char* progname)
     rgb_matrix::PrintMatrixFlags(stderr);
     fprintf(stderr,
         "\t-f <font-file>    : Use given font.\n"
-        "\t-b <brightness>   : Sets brightness percent. Default: 100.\n"
-        "\t-x <x-origin>     : X-Origin of displaying text (Default: 0)\n"
-        "\t-y <y-origin>     : Y-Origin of displaying text (Default: 0)\n"
-        "\t-S <spacing>      : Spacing pixels between letters (Default: 0)\n"
         "\t-C <r,g,b>        : Color. Default 255,255,0\n"
-        "\t-B <r,g,b>        : Background-Color. Default 0,0,0\n"
-        "\t-O <r,g,b>        : Outline-Color, e.g. to increase contrast.\n");
+        "\t-B <r,g,b>        : Background-Color. Default 0,0,0\n");
     return 1;
 }
 
@@ -50,33 +44,14 @@ int main(int argc, char* argv[])
     }
 
     Color color(255, 255, 0);
-    Color bg_color(0, 0, 0);
-    Color outline_color(0, 0, 0);
-    bool with_outline = false;
 
-    const char* bdf_font_file = NULL;
-    int x_orig = 0;
-    int y_orig = 0;
-    int brightness = 100;
-    int letter_spacing = 0;
+    const char* bdf_font_file = nullptr;
 
     int opt;
-    while ((opt = getopt(argc, argv, "x:y:f:C:B:O:b:S:")) != -1) {
+    while ((opt = getopt(argc, argv, "f:C:")) != -1) {
         switch (opt) {
-        case 'b':
-            brightness = atoi(optarg);
-            break;
-        case 'x':
-            x_orig = atoi(optarg);
-            break;
-        case 'y':
-            y_orig = atoi(optarg);
-            break;
         case 'f':
             bdf_font_file = strdup(optarg);
-            break;
-        case 'S':
-            letter_spacing = atoi(optarg);
             break;
         case 'C':
             if (!parseColor(&color, optarg)) {
@@ -84,25 +59,12 @@ int main(int argc, char* argv[])
                 return usage(argv[0]);
             }
             break;
-        case 'B':
-            if (!parseColor(&bg_color, optarg)) {
-                fprintf(stderr, "Invalid background color spec: %s\n", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        case 'O':
-            if (!parseColor(&outline_color, optarg)) {
-                fprintf(stderr, "Invalid outline color spec: %s\n", optarg);
-                return usage(argv[0]);
-            }
-            with_outline = true;
-            break;
         default:
             return usage(argv[0]);
         }
     }
 
-    if (bdf_font_file == NULL) {
+    if (!bdf_font_file) {
         fprintf(stderr, "Need to specify BDF font-file with -f\n");
         return usage(argv[0]);
     }
@@ -114,35 +76,19 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // If we want an outline around the font, we create a new font with
-    // the original font as a template that is just an outline font.
-    rgb_matrix::Font* outline_font = NULL;
-    if (with_outline) {
-        outline_font = font.CreateOutlineFont();
-    }
-
-    if (brightness < 1 || brightness > 100) {
-        fprintf(stderr, "Brightness is outside usable range.\n");
-        return 1;
-    }
-
     RGBMatrix* canvas = rgb_matrix::CreateMatrixFromOptions(matrix_options,
         runtime_opt);
-    if (canvas == NULL) {
+    if (!canvas) {
         return 1;
     }
 
-    canvas->SetBrightness(brightness);
-
-    const bool all_extreme_colors = (brightness == 100)
-        && FullSaturation(color)
-        && FullSaturation(bg_color)
-        && FullSaturation(outline_color);
+    const bool all_extreme_colors = FullSaturation(color);
     if (all_extreme_colors) {
         canvas->SetPWMBits(1);
     }
 
-    const int x = x_orig;
+    const int x_orig = 0;
+    const int y_orig = 0;
     int y = y_orig;
 
     if (isatty(STDIN_FILENO)) {
@@ -166,31 +112,17 @@ int main(int argc, char* argv[])
         if (line_empty) {
             continue;
         }
-        if (outline_font) {
-            // The outline font, we need to write with a negative (-2)
-            // text-spacing, as we want to have the same letter pitch as the
-            // regular text that we then write on top.
-            rgb_matrix::DrawText(
-                canvas,
-                *outline_font,
-                x - 1,
-                y + font.baseline(),
-                outline_color,
-                &bg_color,
-                line,
-                letter_spacing - 2);
-        }
         // The regular text. Unless we already have filled the background with
         // the outline font, we also fill the background here.
         rgb_matrix::DrawText(
             canvas,
             font,
-            x,
+            x_orig,
             y + font.baseline(),
             color,
-            outline_font ? NULL : &bg_color,
+            nullptr,
             line,
-            letter_spacing);
+            0);
         y += font.height();
     }
 
