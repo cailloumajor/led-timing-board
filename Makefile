@@ -16,9 +16,12 @@ stdin-text-driver.o: stdin-text-driver.cc
 $(RGB_LIBRARY): FORCE
 	$(MAKE) -C $(RGB_LIBDIR)
 
-.PHONY: clean
+.PHONY: clean mrproper
 clean:
 	$(RM) -f stdin-text-driver.o stdin-text-driver
+
+mrproper: clean
+	$(MAKE) -C $(RGB_LIBDIR) clean
 
 .PHONY: FORCE
 FORCE:
