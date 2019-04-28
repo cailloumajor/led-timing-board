@@ -17,8 +17,7 @@ static int usage(const char* progname)
     rgb_matrix::PrintMatrixFlags(stderr);
     fprintf(stderr,
         "\t-f <font-file>    : Use given font.\n"
-        "\t-C <r,g,b>        : Color. Default 255,255,0\n"
-        "\t-B <r,g,b>        : Background-Color. Default 0,0,0\n");
+        "\t-C <r,g,b>        : Color. Default 255,255,0\n");
     return 1;
 }
 
@@ -112,8 +111,6 @@ int main(int argc, char* argv[])
         if (line_empty) {
             continue;
         }
-        // The regular text. Unless we already have filled the background with
-        // the outline font, we also fill the background here.
         rgb_matrix::DrawText(
             canvas,
             font,
