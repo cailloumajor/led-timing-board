@@ -190,3 +190,6 @@ dmypy.json
 
 ### Visual Studio Code C/C++ extension
 !.vscode/c_cpp_properties.json
+
+### Binary ###
+stdin-text-driver
