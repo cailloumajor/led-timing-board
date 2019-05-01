@@ -1,131 +1,122 @@
-#include "graphics.h"
-#include "led-matrix.h"
+#include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-using namespace rgb_matrix;
-
-static int usage(const char* progname)
-{
-    fprintf(stderr, "usage: %s [options]\n", progname);
-    fprintf(stderr,
-        "Reads text from stdin and displays it. Empty string: clear screen\n");
-    fprintf(stderr, "Options:\n");
-    rgb_matrix::PrintMatrixFlags(stderr);
-    fprintf(stderr,
-        "\t-f <font-file>    : Use given font.\n"
-        "\t-C <r,g,b>        : Color. Default 255,255,0\n");
-    return 1;
-}
-
-static bool parseColor(Color* c, const char* str)
-{
-    return sscanf(str, "%hhu,%hhu,%hhu", &c->r, &c->g, &c->b) == 3;
-}
-
-static bool FullSaturation(const Color& c)
-{
-    return (c.r == 0 || c.r == 255)
-        && (c.g == 0 || c.g == 255)
-        && (c.b == 0 || c.b == 255);
-}
+#include "cxxopts/include/cxxopts.hpp"
+#include "matrix/include/graphics.h"
+#include "matrix/include/led-matrix.h"
 
 int main(int argc, char* argv[])
 {
-    RGBMatrix::Options matrix_options;
-    rgb_matrix::RuntimeOptions runtime_opt;
-    if (!rgb_matrix::ParseOptionsFromFlags(&argc, &argv,
-            &matrix_options, &runtime_opt)) {
-        return usage(argv[0]);
-    }
+    std::unique_ptr<rgb_matrix::RGBMatrix> const canvas(
+        rgb_matrix::CreateMatrixFromFlags(&argc, &argv));
 
-    Color color(255, 255, 0);
-
-    const char* bdf_font_file = nullptr;
-
-    int opt;
-    while ((opt = getopt(argc, argv, "f:C:")) != -1) {
-        switch (opt) {
-        case 'f':
-            bdf_font_file = strdup(optarg);
-            break;
-        case 'C':
-            if (!parseColor(&color, optarg)) {
-                fprintf(stderr, "Invalid color spec: %s\n", optarg);
-                return usage(argv[0]);
-            }
-            break;
-        default:
-            return usage(argv[0]);
-        }
-    }
-
-    if (!bdf_font_file) {
-        fprintf(stderr, "Need to specify BDF font-file with -f\n");
-        return usage(argv[0]);
-    }
-
-    // Load font. This needs to be a filename with a bdf bitmap font.
     rgb_matrix::Font font;
-    if (!font.LoadFont(bdf_font_file)) {
-        fprintf(stderr, "Couldn't load font '%s'\n", bdf_font_file);
-        return 1;
+    std::vector<std::string> color_specs;
+    std::vector<rgb_matrix::Color> colors;
+    size_t nlines;
+
+    cxxopts::Options options(
+        "stdin-text-driver",
+        "Reads text from stdin and displays it. Empty string clears screen.");
+
+    options.add_options()(
+        "f,font", "BDF font file",
+        cxxopts::value<std::string>())(
+        "C,color", "Text color, one for each line",
+        cxxopts::value<std::vector<std::string>>(color_specs))(
+        "h,help", "Print help");
+
+    try {
+        if (!canvas) {
+            throw std::string("Error creating matrix");
+        }
+
+        auto result = options.parse(argc, argv);
+
+        if (result.count("help")) {
+            std::cout << options.help() << std::endl
+                      << "Matrix options:" << std::endl;
+            rgb_matrix::PrintMatrixFlags(stdout);
+            exit(0);
+        }
+
+        if (result.count("font")) {
+            const std::string font_filename = result["font"].as<std::string>();
+            if (!font.LoadFont(font_filename.data())) {
+                throw std::string("Couldn't load font " + font_filename);
+            }
+        } else {
+            throw std::string("Need to specify BDF font-file with '-f'");
+        }
+
+        if (result.count("color")) {
+            for (std::string cs : result["color"].as<std::vector<std::string>>()) {
+                rgb_matrix::Color c;
+                if (sscanf(cs.data(), "%hhu,%hhu,%hhu", &c.r, &c.g, &c.b) != 3) {
+                    throw std::string("Invalid color spec: " + cs);
+                }
+                colors.push_back(c);
+            }
+        }
+
+        nlines = canvas->height() / font.height();
+        if (nlines <= 0) {
+            throw std::string("Font height does not fit in matrix height");
+        }
+        if (colors.size() != nlines) {
+            throw std::string("Number of colors different than number of lines");
+        }
+    } catch (cxxopts::OptionParseException const& e) {
+        std::cerr << "Error parsing options: " << e.what() << std::endl
+                  << std::endl
+                  << "Try '" << argv[0] << " --help' for help." << std::endl;
+        exit(1);
+    } catch (std::string const& error_text) {
+        std::cerr << error_text << std::endl
+                  << std::endl
+                  << "Try '" << argv[0] << " --help' for help." << std::endl;
+        exit(1);
     }
 
-    RGBMatrix* canvas = rgb_matrix::CreateMatrixFromOptions(matrix_options,
-        runtime_opt);
-    if (!canvas) {
-        return 1;
-    }
-
-    const bool all_extreme_colors = FullSaturation(color);
-    if (all_extreme_colors) {
+    auto full_saturation = [](rgb_matrix::Color c) {
+        return (c.r == 0 || c.r == 255)
+            && (c.g == 0 || c.g == 255)
+            && (c.b == 0 || c.b == 255);
+    };
+    if (all_of(colors.cbegin(), colors.cend(), full_saturation)) {
         canvas->SetPWMBits(1);
     }
 
     const int x_orig = 0;
     const int y_orig = 0;
-    int y = y_orig;
+    // int y = y_orig;
+    unsigned int line_index = 0;
 
-    if (isatty(STDIN_FILENO)) {
-        // Only give a message if we are interactive. If connected via pipe, be
-        // quiet
-        printf("Enter lines. Full screen or empty line clears screen.\n"
-               "Supports UTF-8. CTRL-D for exit.\n");
-    }
-
-    char line[1024];
-    while (fgets(line, sizeof(line), stdin)) {
-        const size_t last = strlen(line);
-        if (last > 0) {
-            line[last - 1] = '\0'; // remove newline.
-        }
-        bool line_empty = strlen(line) == 0;
-        if ((y + font.height() > canvas->height()) || line_empty) {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        if (line_index > (nlines - 1) || line.empty()) {
             canvas->Clear();
-            y = y_orig;
+            line_index = 0;
         }
-        if (line_empty) {
+        if (line.empty()) {
             continue;
         }
+
         rgb_matrix::DrawText(
-            canvas,
+            canvas.get(),
             font,
             x_orig,
-            y + font.baseline(),
-            color,
+            y_orig + line_index * font.height(),
+            colors[line_index],
             nullptr,
-            line,
-            0);
-        y += font.height();
-    }
+            line.data());
 
-    // Finished. Shut down the RGB matrix.
-    canvas->Clear();
-    delete canvas;
+        line_index++;
+    }
 
     return 0;
 }
