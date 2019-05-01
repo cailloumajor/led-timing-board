@@ -104,7 +104,6 @@ int main(int argc, char* argv[])
 
     const int x_orig = 0;
     const int y_orig = 0;
-    // int y = y_orig;
     unsigned int line_index = 0;
 
     std::string line;
