@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
             canvas.get(),
             font,
             x_orig,
-            y_orig + line_index * font.height(),
+            y_orig + font.baseline() + line_index * font.height(),
             colors[line_index],
             nullptr,
             line.data());
