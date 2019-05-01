@@ -76,7 +76,10 @@ int main(int argc, char* argv[])
             throw std::string("Font height does not fit in matrix height");
         }
         if (colors.size() != nlines) {
-            throw std::string("Number of colors different than number of lines");
+            std::ostringstream oss;
+            oss << "Number of colors (" << colors.size()
+                << ") different than number of lines (" << nlines << ")";
+            throw oss.str();
         }
     } catch (cxxopts::OptionParseException const& e) {
         std::cerr << "Error parsing options: " << e.what() << std::endl
