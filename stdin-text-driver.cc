@@ -11,9 +11,7 @@
 
 int main(int argc, char* argv[])
 {
-    std::unique_ptr<rgb_matrix::RGBMatrix> const canvas(
-        rgb_matrix::CreateMatrixFromFlags(&argc, &argv));
-
+    std::unique_ptr<rgb_matrix::RGBMatrix> canvas;
     rgb_matrix::Font font;
     std::vector<std::string> color_specs;
     std::vector<rgb_matrix::Color> colors;
@@ -31,8 +29,12 @@ int main(int argc, char* argv[])
         "h,help", "Print help");
 
     try {
-        if (!canvas) {
-            throw std::string("Error creating matrix");
+        rgb_matrix::RGBMatrix::Options matrix_options;
+        rgb_matrix::RuntimeOptions runtime_options;
+        if (!rgb_matrix::ParseOptionsFromFlags(
+                &argc, &argv,
+                &matrix_options, &runtime_options)) {
+            throw std::string("Error parsing matrix options");
         }
 
         auto result = options.parse(argc, argv);
@@ -61,6 +63,12 @@ int main(int argc, char* argv[])
                 }
                 colors.push_back(c);
             }
+        }
+
+        canvas.reset(rgb_matrix::CreateMatrixFromOptions(
+            matrix_options, runtime_options));
+        if (!canvas) {
+            throw std::string("Error creating matrix");
         }
 
         nlines = canvas->height() / font.height();
