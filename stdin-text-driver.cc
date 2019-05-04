@@ -9,8 +9,7 @@
 #include "matrix/include/graphics.h"
 #include "matrix/include/led-matrix.h"
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     std::unique_ptr<rgb_matrix::RGBMatrix> canvas;
     rgb_matrix::Font font;
     std::vector<std::string> color_specs;
