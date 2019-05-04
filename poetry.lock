@@ -1,0 +1,14 @@
+[[package]]
+category = "dev"
+description = "Automated checker to ensure C++ files follow Google's style guide"
+name = "cpplint"
+optional = false
+python-versions = "*"
+version = "1.4.4"
+
+[metadata]
+content-hash = "ac9a0ca45012cefbfbca58d11e71406883ad4c472e77117967c9bc76c2bcd78d"
+python-versions = "^3.5"
+
+[metadata.hashes]
+cpplint = ["4c30ca47ed6ec6d9ad104f6573b6ee54e1e2dca2f7b5d2fcf846cda095512419", "af9b63c45d48706cb902e7863ed427c4cc8f39bceff3d113d3a807bae9e31cbe"]
