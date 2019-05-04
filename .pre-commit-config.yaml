@@ -2,9 +2,14 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.2.1
     hooks:
+      - id: check-docstring-first
+      - id: check-executables-have-shebangs
       - id: check-merge-conflict
+      - id: debug-statements
       - id: detect-private-key
       - id: end-of-file-fixer
+      - id: fix-encoding-pragma
+        args: [--remove]
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: trailing-whitespace
@@ -15,3 +20,23 @@ repos:
         entry: cpplint
         language: system
         types: [c++]
+      - id: flake8
+        name: flake8
+        entry: flake8
+        language: system
+        types: [python]
+      - id: isort
+        name: isort
+        entry: isort
+        language: system
+        types: [python]
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
