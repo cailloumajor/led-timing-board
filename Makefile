@@ -1,26 +1,40 @@
-CXXFLAGS=-Wall -O3 -g -Wextra -Wno-unused-parameter
+CFLAGS := -O3
+override CFLAGS += -Wall -Wextra -Wno-unused-parameter
+CXXFLAGS := $(CFLAGS)
+LDFLAGS = -lrt -lm -lpthread -L$(rgb_libdir) -lrgbmatrix
 
-RGB_LIB_DISTRIBUTION=matrix
-RGB_LIBDIR=$(RGB_LIB_DISTRIBUTION)/lib
-RGB_LIBRARY_NAME=rgbmatrix
-RGB_LIBRARY=$(RGB_LIBDIR)/lib$(RGB_LIBRARY_NAME).a
-LDFLAGS+=-L$(RGB_LIBDIR) -l$(RGB_LIBRARY_NAME) -lrt -lm -lpthread
+SRCEXT := cc
+TARGET := bin/stdin-text-driver
 
-stdin-text-driver: stdin-text-driver.o $(RGB_LIBRARY)
-	$(CXX) -o $@ $< $(LDFLAGS)
+rgb_libdir := matrix/lib
+rgb_library := $(rgb_libdir)/librgbmatrix.a
 
-stdin-text-driver.o: stdin-text-driver.cc
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
+src_dir := src
+build_dir := build
+sources := $(wildcard $(src_dir)/*.$(SRCEXT))
+objects := $(patsubst $(src_dir)/%.$(SRCEXT),$(build_dir)/%.o,$(sources))
 
-$(RGB_LIBRARY): FORCE
-	$(MAKE) -C $(RGB_LIBDIR)
+$(TARGET): $(objects) $(rgb_library)
+	@echo " Linking..."
+	$(CXX) $(LDFLAGS) -o $@ $^
+
+$(build_dir)/%.o: $(src_dir)/%.$(SRCEXT)
+	@echo " Compiling..."
+	@mkdir -p $(build_dir)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(rgb_library): librgbmatrix ;
+
+.INTERMEDIATE: librgbmatrix
+librgbmatrix:
+	@echo " Building RGB matrix library..."
+	$(MAKE) -C $(rgb_libdir)
 
 .PHONY: clean mrproper
 clean:
-	$(RM) -f stdin-text-driver.o stdin-text-driver
+	@echo " Cleaning..."
+	$(RM) -r $(build_dir) $(TARGET)
 
 mrproper: clean
-	$(MAKE) -C $(RGB_LIBDIR) clean
-
-.PHONY: FORCE
-FORCE:
+	@echo " Passing Mr. Proper..."
+	$(MAKE) -C $(rgb_libdir) clean

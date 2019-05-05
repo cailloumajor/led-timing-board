@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
-#include "cxxopts/include/cxxopts.hpp"
-#include "matrix/include/graphics.h"
-#include "matrix/include/led-matrix.h"
+#include "../cxxopts/include/cxxopts.hpp"
+#include "../matrix/include/graphics.h"
+#include "../matrix/include/led-matrix.h"
 
 int main(int argc, char* argv[]) {
     std::unique_ptr<rgb_matrix::RGBMatrix> canvas;
