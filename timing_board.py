@@ -1,11 +1,11 @@
 #!/usr/bin/env python3.5
 import subprocess
 from datetime import datetime
-from typing import IO
+from typing import Optional
 
 FIRST_LINE = "#44 "
 TEAM_NAME = "PG72"
-COMMANDS = ["", "BOX", "FUEL"]
+COMMANDS = [TEAM_NAME, "BOX", "FUEL"]
 MATRIX_OPTIONS = [
     "--led-rows=16",
     "--led-chain=2",
@@ -20,6 +20,8 @@ MATRIX_OPTIONS = [
 
 
 def parse_timing(raw_time: str) -> str:
+    if not raw_time:
+        raise ValueError("Invalid empty string")
     raw_time = raw_time.zfill(7)
     raw_time += "000"
     timing = datetime.strptime(raw_time, "%M%S%f").time()
@@ -29,38 +31,58 @@ def parse_timing(raw_time: str) -> str:
     return formatted_timing
 
 
-def handle_instructions(stream: IO[str]) -> None:
-    instruction = input("1? ")
-    first_line = FIRST_LINE
-    if instruction.startswith("*"):
+class SubProcessNotInitialized(Exception):
+    pass
+
+
+class TimingBoard:
+
+    def __init__(self) -> None:
+        self._lines = ["READY...", "-:--.---"]
+        self._proc = None  # type: Optional[subprocess.Popen]
+
+    def _handle_instruction(self) -> bool:
+        eoferror = False
         try:
-            command_index = int(instruction[1:])
-            first_line += COMMANDS[command_index]
-            instruction = "consumed"
-        except (ValueError, IndexError):
-            return
-    else:
-        first_line += TEAM_NAME
-    if instruction == "consumed":
-        instruction = input("2? ")
-    try:
-        second_line = parse_timing(instruction)
-    except ValueError:
-        return
-    for l in (first_line, second_line):
-        stream.write(l + "\n")
-        stream.flush()
+            instruction = input("? ")
+        except EOFError:
+            eoferror = True
+        if eoferror or instruction == "*9999":
+            return False
+        elif instruction.startswith("*"):
+            try:
+                command_index = int(instruction[1:])
+                self._lines[0] = FIRST_LINE + COMMANDS[command_index]
+            except (ValueError, IndexError):
+                return True
+        else:
+            try:
+                self._lines[1] = parse_timing(instruction)
+            except ValueError:
+                return True
+        return True
 
+    def _write(self) -> None:
+        if self._proc is None:
+            raise SubProcessNotInitialized
+        for l in self._lines:
+            self._proc.stdin.write(l + "\n")
+            self._proc.stdin.flush()
 
-def main() -> None:
-    proc = subprocess.Popen(
-        ["sudo", "bin/stdin-text-driver"] + MATRIX_OPTIONS,
-        stdin=subprocess.PIPE,
-        universal_newlines=True,
-    )
-    while proc.poll() is None:
-        handle_instructions(proc.stdin)
+    def run(self) -> None:
+        self._proc = subprocess.Popen(
+            ["sudo", "bin/stdin-text-driver"] + MATRIX_OPTIONS,
+            stdin=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        self._write()
+        while self._proc.poll() is None:
+            if self._handle_instruction():
+                self._write()
+            else:
+                self._proc.stdin.close()
 
 
 if __name__ == "__main__":
-    main()
+    timing_board = TimingBoard()
+    timing_board.run()
