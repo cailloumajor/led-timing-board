@@ -81,6 +81,7 @@ class TimingBoard:
                 self._write()
             else:
                 self._proc.stdin.close()
+                self._proc.wait(timeout=2)
 
 
 if __name__ == "__main__":
