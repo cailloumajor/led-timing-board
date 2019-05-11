@@ -38,7 +38,7 @@ class SubProcessNotInitialized(Exception):
 class TimingBoard:
 
     def __init__(self) -> None:
-        self._lines = ["READY...", "-:--.---"]
+        self._lines = [FIRST_LINE + TEAM_NAME, "-:--.---"]
         self._proc = None  # type: Optional[subprocess.Popen]
 
     def _handle_instruction(self) -> bool:
