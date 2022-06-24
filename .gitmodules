@@ -1,6 +1,6 @@
 [submodule "matrix"]
 	path = matrix
-	url = https://github.com/hzeller/rpi-rgb-led-matrix.git
+	url = https://github.com/cailloumajor/rpi-rgb-led-matrix.git
 [submodule "cxxopts"]
 	path = cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
