@@ -1,7 +1,7 @@
 CFLAGS := -O3
 override CFLAGS += -Wall -Wextra -Wno-unused-parameter
 CXXFLAGS := $(CFLAGS)
-LDFLAGS = -lrt -lm -lpthread -L$(rgb_libdir) -lrgbmatrix
+LDFLAGS = -lrt -lm -pthread -L$(rgb_libdir) -lrgbmatrix
 
 SRCEXT := cc
 TARGET := bin/stdin-text-driver
