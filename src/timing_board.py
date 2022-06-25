@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+#!/usr/bin/env python3
 import subprocess
 from datetime import datetime
 from typing import Optional
@@ -8,7 +8,9 @@ TEAM_NAME = "PG72"
 COMMANDS = [TEAM_NAME, "BOX", "FUEL"]
 MATRIX_OPTIONS = [
     "--led-rows=16",
+    "--led-cols=32",
     "--led-chain=2",
+    "--led"
     "--led-row-addr-type=2",
     "--led-multiplexing=3",  # P10(3535)16X32-4S-M2.1
     # "--led-multiplexing=5",  # M-P10-4S-3535-3216-JA1

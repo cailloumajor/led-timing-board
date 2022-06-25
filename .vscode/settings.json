@@ -1,5 +1,20 @@
 {
-    "[cpp][python]": {
+    "[cpp]": {
         "editor.formatOnSave": true
-    }
+    },
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    "python.formatting.provider": "black",
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.sortImports.args": [
+        "--settings-path=${workspaceFolder}"
+    ],
+    "python.testing.pytestEnabled": true
 }
