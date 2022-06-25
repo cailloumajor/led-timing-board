@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "tamasfe.even-better-toml",
+        "ms-vscode.cpptools",
+        "ms-python.python",
+        "jeff-hykin.better-cpp-syntax"
+    ]
+}
