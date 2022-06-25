@@ -15,6 +15,5 @@
     "python.linting.pylintEnabled": false,
     "python.sortImports.args": [
         "--settings-path=${workspaceFolder}"
-    ],
-    "python.testing.pytestEnabled": true
+    ]
 }
