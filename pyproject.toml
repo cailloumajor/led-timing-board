@@ -10,6 +10,7 @@ timing-board = "led_timing_board.main:run"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+evdev = "1.5.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
