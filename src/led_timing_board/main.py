@@ -9,6 +9,13 @@ from typing import Any, Optional, cast
 
 from evdev import InputDevice, KeyEvent, ecodes
 
+from led_timing_board.display_strategies import (
+    Blinking,
+    DisplayStrategy,
+    Fixed,
+    Initial,
+)
+
 INSTRUCTIONS = ["BOX", "FEUX"]
 
 MATRIX_OPTIONS = [
@@ -109,26 +116,25 @@ class TimingBoard:
     def __init__(self) -> None:
         # Protects lines array from concurrent accesses
         self._lock = asyncio.Lock()
-        self._lines = ["#72", "RDY"]
+        self._display_strategy: DisplayStrategy = Initial()
 
-    async def _set_lines(self, new_lines: list[Optional[str]]) -> None:
+    async def _set_strategy(self, strategy: DisplayStrategy) -> None:
         async with self._lock:
-            for i, _ in enumerate(self._lines):
-                new_line = new_lines[i]
-                if new_line is not None:
-                    self._lines[i] = new_line
+            self._display_strategy = strategy
 
     async def handle_input(self, input: str) -> None:
+        if input == "0":
+            await self._set_strategy(Initial())
         if (match := RE_POSITION.fullmatch(input)) is not None:
-            await self._set_lines(["P" + match.group(1)] * 2)
+            await self._set_strategy(Fixed("P" + match.group(1)))
         elif (match := RE_INSTRUCTION.fullmatch(input)) is not None:
             try:
                 instruction = INSTRUCTIONS[int(match.group(1)) - 1]
             except IndexError:
                 return
-            await self._set_lines([instruction, ""])
+            await self._set_strategy(Blinking(instruction))
         elif RE_LAP_TIME.fullmatch(input):
-            await self._set_lines([input] * 2)
+            await self._set_strategy(Fixed(input))
         elif input == "*9999":
             await asyncio.create_subprocess_shell("reboot")
 
@@ -140,15 +146,12 @@ class TimingBoard:
         )
         stdin = cast(asyncio.StreamWriter, proc.stdin)
         try:
-            for i in cycle(range(len(self._lines))):
-                wait_time = 1.0
-                async with self._lock:
-                    data = self._lines[i]
-                    if data == "":
-                        wait_time = 0.2
-                    stdin.write((data + "\n").encode("ascii"))
-                    await stdin.drain()
-                await asyncio.sleep(wait_time)
+            while True:
+                if (new_line := self._display_strategy.update()) is not None:
+                    async with self._lock:
+                        stdin.write((new_line + "\n").encode("ascii"))
+                        await stdin.drain()
+                await asyncio.sleep(0.1)
         finally:
             stdin.close()
             await stdin.wait_closed()
