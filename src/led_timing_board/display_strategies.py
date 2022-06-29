@@ -39,7 +39,7 @@ class Blinking(DisplayStrategy):
 
     def update(self) -> Optional[str]:
         now = monotonic()
-        wait_time = 1.0 if self._show else 0.2
+        wait_time = 1.0 if self._show else 0.1
         if now - self._status_started > wait_time:
             self._show = not self._show
             self._status_started = now
