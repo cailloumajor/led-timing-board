@@ -16,7 +16,7 @@ from led_timing_board.display_strategies import (
     Initial,
 )
 
-INSTRUCTIONS = ["BOX", "FEUX"]
+INSTRUCTIONS = ["BOX", "FEUX", "S&GO", "COOL", "GAZv", "GAZ^"]
 
 MATRIX_OPTIONS = [
     "--led-rows=16",
@@ -53,7 +53,8 @@ KEY_CHARS = {
 }
 
 RE_POSITION = re.compile(r"/(\d+)")
-RE_INSTRUCTION = re.compile(r"\*(\d)")
+RE_LAPS = re.compile(r"\*(\d+)")
+RE_INSTRUCTION = re.compile(r"(\d)")
 RE_LAP_TIME = re.compile(r"[0-5]\d\.\d")
 
 _logger = logging.getLogger(__name__)
@@ -125,8 +126,10 @@ class TimingBoard:
     async def handle_input(self, input: str) -> None:
         if input == "0":
             await self._set_strategy(Initial())
-        if (match := RE_POSITION.fullmatch(input)) is not None:
+        elif (match := RE_POSITION.fullmatch(input)) is not None:
             await self._set_strategy(Fixed("P" + match.group(1)))
+        elif (match := RE_LAPS.fullmatch(input)) is not None:
+            await self._set_strategy(Fixed("L" + match.group(1)))
         elif (match := RE_INSTRUCTION.fullmatch(input)) is not None:
             try:
                 instruction = INSTRUCTIONS[int(match.group(1)) - 1]
