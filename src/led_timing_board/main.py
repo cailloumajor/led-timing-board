@@ -53,7 +53,7 @@ KEY_CHARS = {
 }
 
 RE_POSITION = re.compile(r"/(\d+)")
-RE_LAPS = re.compile(r"\*(\d+)")
+RE_LAPS = re.compile(r"\*(\d{1,3})")
 RE_INSTRUCTION = re.compile(r"(\d)")
 RE_LAP_TIME = re.compile(r"[0-5]\d\.\d")
 
