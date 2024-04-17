@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from multiprocessing.connection import wait
 from time import monotonic
@@ -12,7 +13,7 @@ class DisplayStrategy(ABC):
 
 class Initial(DisplayStrategy):
 
-    parts = ("#72", "RDY")
+    parts = (os.environ.get("LED_TIMING_BOARD_INITIAL", "#???"), "RDY")
 
     def __init__(self) -> None:
         self._index = -1
