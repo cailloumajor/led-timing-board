@@ -163,7 +163,7 @@ class TimingBoard:
 
 async def ingest_input(board_driver: TimingBoard) -> None:
     buffer = ""
-    dev = InputDevice("/dev/input/by-id/usb-HCT_USB_Keyboard-event-kbd")
+    dev = InputDevice("/dev/input/event0")
     async for ev in dev.async_read_loop():
         if ev.type != ecodes.EV_KEY or ev.value != KeyEvent.key_down:
             continue
